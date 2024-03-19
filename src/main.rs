@@ -1,16 +1,17 @@
 #![allow(unused)] // while exploring,remove for prod.
+use std::io;
 use std::collections::BTreeMap;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::{thing, Datetime, Object, Thing, Value};
-use surrealdb::Response;
+use surrealdb::{Error, Response};
 use surrealdb::kvs::Datastore;
 use surrealdb::dbs::Session;
-use surrealdb::err::Error;
 use surrealdb::engine::remote::ws::Ws;
 use surrealdb::engine::local::Mem;
 use surrealdb::Surreal;
 use datasetwork::connect_to_db;
+use datasetwork::config_database::DatabaseConfig;
 
 #[derive(Debug, Serialize)]
 struct Name<'a> {
@@ -37,9 +38,20 @@ struct Record {
 }
 
 #[tokio::main]
-async fn main() -> surrealdb::Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Connect to the server
-    if let Err(err) = connect_to_db().await {
+    let config = match DatabaseConfig::from_file("config.toml") {
+        Ok(config) => {
+            println!("{:?}", config);
+            config
+        },
+        Err(err) => {
+            eprintln!("Error: {}", err);
+            return Err(Box::try_from(err).unwrap());
+        }
+    };
+
+    if let Err(err) = connect_to_db(config).await {
         eprintln!("Error connecting to the database: {}", err);
         // 在这里可以选择如何处理错误，比如退出程序或者进行其他逻辑处理
     }
