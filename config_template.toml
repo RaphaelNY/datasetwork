@@ -1,0 +1,8 @@
+[database]
+host = "your_host"
+port = 0
+username = "your_username"
+password = "your_password"
+
+[other]
+
